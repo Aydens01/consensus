@@ -2,7 +2,7 @@
 
 **Sujet :** Partie informatique du projet Consensus (projet ING1-S2)
 
-**Date :**
+**Date :** 16.03.19
 
 ## Description
 
