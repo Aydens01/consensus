@@ -46,6 +46,8 @@ $ git pull origin master
 
 Après avoir modifié le projet en local, vous voudrez certainement mettre la nouvelle version en ligne. Pour cela, il suffira d'effectuer les commandes suivantes : 
 ```sh
+# Si vous ne vous trouvez pas dans le dossier du projet 
+$ cd consensu
 $ git add .
 $ git commit
 ```
