@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 
 #############| NOTES |##############
 """
-TODO:
+TODO: rendre modulable la fonction System.show()
 """
 ####################################
 
@@ -32,7 +32,7 @@ class Agent():
 
     id = 0
 
-    def __init__(self, nb_param):
+    def __init__(self, nb_params, intervalle=[1, 20], params=np.array([])):
         """ Initialisation de l'agent
         Paramètres :
         ------------
@@ -40,8 +40,10 @@ class Agent():
         """
         self.id = Agent.id
         Agent.id += 1
-        self.nb_param = nb_param
-        self.params = self.gen()
+        self.nb_params = nb_params
+        self.int = intervalle
+        # ! check that
+        self.params = self.gen() if nb_params!=params.size else params
     
     def gen(self) :
         """ Génère aléatoirement les paramètres de l'agent
@@ -52,14 +54,15 @@ class Agent():
         --------
             output {np.array}
         """
-        output = np.array([rd.randint(1, 5) for k in range(self.nb_param)])
+        a, b = self.int[0], self.int[1]
+        output = np.array([rd.randint(a, b) for k in range(self.nb_params)])
         return(output)
     
     def __repr__(self):
         """ Fonction d'affichage de l'agent
         """
         output = "Agent\n"
-        for k in range(self.nb_param):
+        for k in range(self.nb_params):
             output += "param"+str(k+1)+" : " + str(self.params[k])+"\n"
         return(output)
 

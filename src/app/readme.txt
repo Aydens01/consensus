@@ -1,1 +1,0 @@
-Ici les explications de la structure du dossier src/app.
