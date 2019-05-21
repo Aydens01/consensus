@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 
 #############| NOTES |##############
 """
-TODO: rendre modulable la fonction System.show()
+TODO
 """
 ####################################
 
@@ -55,7 +55,8 @@ class Agent():
             output {np.array}
         """
         a, b = self.int[0], self.int[1]
-        output = np.array([rd.randint(a, b) for k in range(self.nb_params)])
+
+        output = np.array([rd.randint(a, b), rd.randint(a, b), rd.randint(-20, 20), rd.randint(-20, 20)])
         return(output)
     
     def __repr__(self):
@@ -69,7 +70,7 @@ class Agent():
 
 class System():
     """Système d'agents"""
-    def __init__(self, agents, pas, temps, alpha=1):
+    def __init__(self, agents, pas, temps, madjacence, alpha=1):
         """ Initialisation du système
         Paramètres :
         ------------
@@ -78,24 +79,11 @@ class System():
         self.pas = pas
         self.temps = temps
         self.alpha = alpha if 0<alpha<=1 else 1
+        self.agents = agents
         self.init_matrice = self.normalize(agents)
-        self.mtransition = np.array([[0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                     [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                     [-2, 0, -2, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
-                                     [0, -2, 0, -2, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0],
-                                     [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                     [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-                                     [1, 0, 1, 0, -1, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                     [0, 1, 0, 1, 0, -1, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0],
-                                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-                                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                                     [1, 0, 1, 0, 0, 0, 0, 0, -2, 0, -2, 0, 1, 0, 1, 0],
-                                     [0, 1, 0, 1, 0, 0, 0, 0, 0, -2, 0, -2, 0, 1, 0, 1],
-                                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                                     [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, -1, 0, -1, 0],
-                                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, -1, 0, -1]])
+        self.madjacence = madjacence
         self.consensus = self.euler()
+        self.loss = self.lossFct()
 
     def normalize(self, agents):
         """ Initialise le vecteur X contenant l'ensemble des agents
@@ -129,44 +117,69 @@ class System():
                 output[i-1] = X[i-1]
         return(output)
 
+    def deriv(self, vect):
+        output = np.array([])
+        for k in range(len(self.agents)):
+            agent = np.array([vect[k*4+i] for i in range(2,4)])
+            u1 = 0
+            u2 = 0
+            for j in range(len(self.agents)):
+                u1+=self.madjacence[k][j]*((vect[k*4]-vect[j*4])+(vect[k*4+2]-vect[j*4+2]))
+                u2+=self.madjacence[k][j]*((vect[k*4+1]-vect[j*4+1])+(vect[k*4+3]-vect[j*4+3]))
+            agent = np.append(agent, [-u1, -u2])
+            output=self.phi_alpha(np.append(output, agent))
+        return(output)
+
     def euler(self):
         """ Méthode d'Euler pour approcher le consensus
         entre les agents
         """
-        t = 0
-        N = int(self.temps/self.pas)+2
-        output = np.zeros((N, 16))
-        output[0] = self.init_matrice
-        n = 1
-        while t<self.temps:
-            Z = self.pas*self.phi_alpha(np.dot(self.mtransition,output[n-1]))
-            output[n] = output[n-1]+Z
+        t = self.pas
+        output = np.array([self.init_matrice])
+        while t<=self.temps:
+            Z = self.pas*self.deriv(output[-1])
+            #//Z = self.pas*self.phi_alpha(np.dot(self.mtransition,output[-1]))
+            output = np.append(output, [output[-1]+Z], axis=0)
             t += self.pas
-            n+=1
+        #//print("X = ", output)
         return(output)
     
+    def distance(self, status):
+        """ Retourne les écarts de valeur entre les paramètres
+        des agents.
+    "   """
+        output = np.array([])
+        for k in range(len(self.agents)):
+            pos_x = 0
+            pos_y = 0
+            vit_x = 0
+            vit_y = 0
+            for j in range(len(self.agents)):
+                pos_x += self.madjacence[k][j]*(status[k*4]-status[j*4])
+                pos_y += self.madjacence[k][j]*(status[k*4+1]-status[k*4+1])
+                vit_x += self.madjacence[k][j]*(status[k*4+2]-status[k*4+2])
+                vit_y += self.madjacence[k][j]*(status[k*4+3]-status[k*4+3])
+            agent = np.array([pos_x, pos_y, vit_x, vit_y])
+            output=np.append(output, agent)
+        return(output)
+
+    def lossFct(self):
+        """ Calcule la fonction de coût pour chaque iterations
+        menant au consensus
+        """
+        output = np.zeros(self.consensus.shape)
+        for i in range(self.consensus.shape[0]):
+            output[i] = self.distance(self.consensus[i])
+        return(output)
+
     def show(self):
         """ Affiche le graphe représentant le système
-        # ! Non modulable, marche uniquement pour 4 agents
-        # ! dont les positions selon x et y sont leurs deux 
-        # ! premiers paramètres
         """
-        axis_x_agent1 = [state[0] for state in self.consensus]
-        axis_y_agent1 = [state[1] for state in self.consensus]
-
-        axis_x_agent2 = [state[4] for state in self.consensus]
-        axis_y_agent2 = [state[5] for state in self.consensus]
-
-        axis_x_agent3 = [state[8] for state in self.consensus]
-        axis_y_agent3 = [state[9] for state in self.consensus]
-
-        axis_x_agent4 = [state[12] for state in self.consensus]
-        axis_y_agent4 = [state[13] for state in self.consensus]
-
-        plt.plot(axis_x_agent1, axis_y_agent1, 'r*') 
-        plt.plot(axis_x_agent2, axis_y_agent2, 'b*')
-        plt.plot(axis_x_agent3, axis_y_agent3, 'g*')
-        plt.plot(axis_x_agent4, axis_y_agent4, 'm*')
+        repr = ['r*','b*','g*','m*','y*','c*']
+        for k in range(len(self.agents)):
+            axis_x_agent = [state[k*4] for state in self.consensus]
+            axis_y_agent = [state[k*4+1] for state in self.consensus]
+            plt.plot(axis_x_agent, axis_y_agent, repr[k] if k<6 else 'k*')
         plt.show()
 
 
@@ -176,7 +189,14 @@ class System():
 
 if __name__=="__main__" :
     # Environnement de test (provisoire)
-    agents = [Agent(4) for i in range(4)]
-    sys = System(agents, pas=0.1, temps=5)
+    agents = [Agent(4) for i in range(6)]
+    A = np.array([[0, 1, 1, 1, 1, 1],
+                  [1, 0, 1, 1, 1, 1],
+                  [1, 1, 0, 1, 1, 1],
+                  [1, 1, 1, 0, 1, 1],
+                  [1, 1, 1, 1, 0, 1],
+                  [1, 1, 1, 1, 1, 0]
+                ])
+    sys = System(agents, pas=1, temps=5, madjacence=A)
     #//print(sys.consensus)
-    sys.show()
+    #//sys.show()
