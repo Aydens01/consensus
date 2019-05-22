@@ -305,6 +305,43 @@ class Interface():
                                 width = LARGEUR_CANVAS, 
                                 height = HAUTEUR_CANVAS)
         
+        self.FrameCanvasBot = tk.Frame(self.FrameCanvas,
+                                       background="#303030")
+            # * Frame Load
+        self.FrameLoad = tk.LabelFrame(self.FrameCanvasBot,
+                                       text = "Charger un fichier (.txt)",
+                                       background="#303030",
+                                       foreground="#FFFFFF",
+                                       padx = 10, pady = 10)
+        
+        self.EntryLoad = tk.Entry(self.FrameLoad,
+                                  text = tk.StringVar(self.FrameLoad))
+        
+        self.BoutonLoad = tk.Button(self.FrameLoad,
+                                    text = "Charger",
+                                    padx=50,
+                                    foreground="#FFFFFF",
+                                    activebackground="#303030",
+                                    background = "#303030")
+                                    # todo: command = partial()
+            # * Frame Save
+        self.FrameSave = tk.LabelFrame(self.FrameCanvasBot,
+                                       text = "Sauvegarder le système",
+                                       background="#303030",
+                                       foreground="#FFFFFF",
+                                       padx = 10, pady = 10)
+        
+        self.EntrySave = tk.Entry(self.FrameSave,
+                                  text = tk.StringVar(self.FrameSave))
+        
+        self.BoutonSave = tk.Button(self.FrameSave,
+                                    text = "Sauver",
+                                    padx=50,
+                                    foreground="#FFFFFF",
+                                    activebackground="#303030",
+                                    background = "#303030")
+                                    # todo: command = partial()
+
         # * Graphe
         self.FrameGraph = tk.LabelFrame(self.Fenetre,
                                         labelanchor='n',
@@ -370,6 +407,14 @@ class Interface():
 
         self.FrameCanvas.grid(column=1, row=0)
         self.Canvas.grid(column=0, row=0)
+        self.FrameCanvasBot.grid(column=0, row=1)
+        self.FrameLoad.grid(column=0, row=0)
+        self.EntryLoad.grid(column=0, row=0, padx=5)
+        self.BoutonLoad.grid(column=1, row=0, padx=5)
+
+        self.FrameSave.grid(column=1, row=0)
+        self.EntrySave.grid(column=0, row=0, padx=5)
+        self.BoutonSave.grid(column=1, row=0, padx=5)
 
         self.FrameGraph.grid(column=2, row=0, sticky='n')
         self.Graph.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
