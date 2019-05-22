@@ -32,7 +32,7 @@ class Agent():
 
     id = 0
 
-    def __init__(self, nb_params, intervalle=[1, 20], params=np.array([])):
+    def __init__(self, nb_params, params=np.array([]), intervalle=[1, 20]):
         """ Initialisation de l'agent
         Paramètres :
         ------------
@@ -70,7 +70,7 @@ class Agent():
 
 class System():
     """Système d'agents"""
-    def __init__(self, agents, pas, temps, madjacence, alpha=1):
+    def __init__(self, agents, pas, temps, madjacence, consensus=None, alpha=1):
         """ Initialisation du système
         Paramètres :
         ------------
@@ -82,7 +82,7 @@ class System():
         self.agents = agents
         self.init_matrice = self.normalize(agents)
         self.madjacence = madjacence
-        self.consensus = self.euler()
+        self.consensus = self.euler() if consensus==None else consensus
         self.loss = self.lossFct()
 
     def normalize(self, agents):

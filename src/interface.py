@@ -33,8 +33,7 @@ import consensus as css
 
 #############| NOTES |##############
 """
-FIXME: La matrice d'adjacence du graphe tous connectés 
-       donne des résultats étranges.
+FIXME
 """
 ####################################
 
@@ -54,6 +53,7 @@ class Interface():
 
     def  __init__(self):
         self.Fenetre = tk.Tk()
+        self.sys = None
         self.agents = []
         self.obstacles = []
         self.initialisation()
@@ -322,8 +322,8 @@ class Interface():
                                     padx=50,
                                     foreground="#FFFFFF",
                                     activebackground="#303030",
-                                    background = "#303030")
-                                    # todo: command = partial()
+                                    background = "#303030",
+                                    command = partial(self.load))
             # * Frame Save
         self.FrameSave = tk.LabelFrame(self.FrameCanvasBot,
                                        text = "Sauvegarder le système",
@@ -339,8 +339,8 @@ class Interface():
                                     padx=50,
                                     foreground="#FFFFFF",
                                     activebackground="#303030",
-                                    background = "#303030")
-                                    # todo: command = partial()
+                                    background = "#303030",
+                                    command = partial(self.save))
 
         # * Graphe
         self.FrameGraph = tk.LabelFrame(self.Fenetre,
@@ -466,7 +466,7 @@ class Interface():
         if check :
             if self.agentObstacle.get()==True:
                 params = np.array([float(pos_x), float(pos_y), float(vit_x), float(vit_y)])
-                self.agents.append(css.Agent(4, [], params))
+                self.agents.append(css.Agent(4, params))
                 # On actualise le Canvas
                 self.affichage()
             else :
@@ -496,7 +496,7 @@ class Interface():
 
         if self.agentObstacle.get()==True:
             # On ajoute un nouvel agent à la liste
-            self.agents.append(css.Agent(4, [], np.array([float(pos_x), float(pos_y),rd.randint(-20, 20),rd.randint(-20, 20)])))
+            self.agents.append(css.Agent(4, np.array([float(pos_x), float(pos_y),rd.randint(-20, 20),rd.randint(-20, 20)])))
             # On actualise le Canvas
             self.affichage()
         else:
@@ -518,7 +518,7 @@ class Interface():
 
         if self.verifSaisie([nb_agents]):
             if self.agentObstacle.get()==True:
-                self.agents = [css.Agent(4, [100, 400]) for i in range(int(nb_agents))]
+                self.agents = [css.Agent(4, np.array([]), [100, 400]) for i in range(int(nb_agents))]
                 # On actualise le Canvas
                 self.affichage()
             else:
@@ -539,19 +539,33 @@ class Interface():
             output = np.array([ [1 if k-1==i or k+1==i else 0 for i in range(nb_agents)] for k in range(nb_agents)])
         return(output)
 
-    def loop(self, sys, index):
+    def loop(self, consensus, index):
         """ Effectue les déplacements des agents sur le 
         Canvas pour une itération
         """
-        status = sys.consensus[index]
-        for k in range(len(self.agents)):
+        status = consensus[index]
+        for k in range(int((consensus.shape[1])/4)):
             self.agents[k].params[0] = status[k*4]
             self.agents[k].params[1] = status[k*4+1]
         # On actualise le Canvas
         self.affichage()
 
-        if index<len(sys.consensus)-1:
-            self.Canvas.after(100, self.loop, sys, index+1)
+        if index<consensus.shape[0]-1:
+            self.Canvas.after(100, self.loop, consensus, index+1)
+
+    def drawGraph(self, loss):
+        """
+        """
+        # On réinitilise le graphe
+        self.Figure.clear()
+        self.ax = self.Figure.add_subplot(111)
+        t = np.arange(0, loss.shape[0])
+        for i in range(loss.shape[1]):
+            data = [loss[j][i] for j in range(loss.shape[0])]
+            self.ax.plot(t, data, marker='', color='black', linewidth=1)
+        
+        self.Graph.draw()
+        self.Toolbar.update()
 
     def go(self):
         """ Animation des agents vers le consensus 
@@ -564,21 +578,32 @@ class Interface():
         if check:
             madjacence = self.genMadjacence()
             # Résolution du consensus
-            sys = css.System(self.agents, float(T)/float(N), float(T), madjacence)
-            # On réinitilise le graphe
-            self.Figure.clear()
-            self.ax = self.Figure.add_subplot(111)
-            t = np.arange(0,sys.loss.shape[0])
-            for i in range(sys.loss.shape[1]):
-                data = [sys.loss[j][i] for j in range(sys.loss.shape[0])]
-                self.ax.plot(t, data, marker='', color='black', linewidth=1)
-            
-            self.Graph.draw()
-            self.Toolbar.update()
-            self.loop(sys, 0)
+            self.sys = css.System(self.agents, float(T)/float(N), float(T), madjacence)
+            self.drawGraph(self.sys.loss)
+            self.loop(self.sys.consensus, 0)
 
         else:
             print("Erreur : Données d'entrée invalides")
+    
+    def load(self):
+        """ Récupère les données d'un fichier de sauvegarde
+        et l'affiche.
+        """
+        nom = self.EntryLoad.get()
+        # ! fct de vérif
+        consensus = np.loadtxt("data/"+nom+"c.txt")
+        loss = np.loadtxt("data/"+nom+"m.txt")
+        self.agents = [css.Agent(4) for k in range(int(consensus.shape[1]/4))]
+        self.drawGraph(loss)
+        self.loop(consensus, 0)
+    
+    def save(self):
+        """ Sauvegarde du système
+        """
+        nom = self.EntrySave.get()
+        if len(nom)>0 :
+            np.savetxt("data/"+nom+"c.txt", self.sys.consensus)
+            np.savetxt("data/"+nom+"m.txt", self.sys.loss)
 
     def main(self):
         """ Lance l'interface
