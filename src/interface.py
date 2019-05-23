@@ -195,7 +195,7 @@ class Interface():
         self.FrameForm = tk.Frame(self.FrameCoord,
                                   background="#303030")
 
-        #!######### FORMULAIRE ########## # TODO: Partie dynamique
+        #!######### FORMULAIRE ##########
 
         #// if self.cas == 2d
 
@@ -290,15 +290,15 @@ class Interface():
                                          activebackground="#303030",
                                          background = "#303030",
                                          command = partial(self.go))
-        
+        """
         self.BoutonArret = tk.Button(self.FrameOptionGo,
                                      text="Arrêter",
                                      padx=50,
                                      foreground="#FFFFFF",
                                      activebackground="#303030",
                                      background = "#303030")
-                                     # TODO: command = partial()
-
+                                     #// TODO command = partial()
+        """
         # * Canvas
         self.Canvas = tk.Canvas(self.FrameCanvas,
                                 background = "#4C4C4C",
@@ -403,7 +403,7 @@ class Interface():
 
         self.FrameOptionGo.grid(column=0, row=2, sticky='n')
         self.BoutonLancement.grid(column=0, row=0, sticky='nswe')
-        self.BoutonArret.grid(column=1, row=0, sticky='nswe')
+        #//self.BoutonArret.grid(column=1, row=0, sticky='nswe')
 
         self.FrameCanvas.grid(column=1, row=0)
         self.Canvas.grid(column=0, row=0)
@@ -509,6 +509,9 @@ class Interface():
         self.agents = []
         self.obstacles = []
         self.affichage()
+        self.Figure.clear()
+        self.Graph.draw()
+        self.Toolbar.update()
 
 
     def genRandomly(self):
@@ -590,13 +593,13 @@ class Interface():
         et l'affiche.
         """
         nom = self.EntryLoad.get()
-        # ! fct de vérif
-        consensus = np.loadtxt("data/"+nom+"c.txt")
-        loss = np.loadtxt("data/"+nom+"m.txt")
-        self.agents = [css.Agent(4) for k in range(int(consensus.shape[1]/4))]
-        self.drawGraph(loss)
-        self.loop(consensus, 0)
-    
+        if len(nom)>0:
+            consensus = np.loadtxt("data/"+nom+"c.txt")
+            loss = np.loadtxt("data/"+nom+"m.txt")
+            self.agents = [css.Agent(4) for k in range(int(consensus.shape[1]/4))]
+            self.drawGraph(loss)
+            self.loop(consensus, 0)
+        
     def save(self):
         """ Sauvegarde du système
         """
